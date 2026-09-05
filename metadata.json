@@ -1,0 +1,6 @@
+{
+  "name": "NER Smart Logistics & Accessibility Intelligence Platform",
+  "description": "AI-powered logistics intelligence, GIS accessibility monitoring, predictive disruption forecasting, GPS vehicle tracking, and field incident reporting for the North Eastern Region (MDoNER).",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

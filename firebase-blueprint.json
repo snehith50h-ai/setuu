@@ -1,0 +1,86 @@
+{
+  "collections": [
+    {
+      "name": "corridors",
+      "documentId": "corridorId",
+      "fields": [
+        { "name": "name", "type": "string" },
+        { "name": "code", "type": "string" },
+        { "name": "type", "type": "string" },
+        { "name": "status", "type": "string" },
+        { "name": "state", "type": "string" },
+        { "name": "path", "type": "map" },
+        { "name": "lastUpdated", "type": "timestamp" }
+      ]
+    },
+    {
+      "name": "vehicles",
+      "documentId": "vehicleId",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "registrationNumber", "type": "string" },
+        { "name": "type", "type": "string" },
+        { "name": "status", "type": "string" },
+        { "name": "cargoDescription", "type": "string" },
+        { "name": "cargoCategory", "type": "string" },
+        { "name": "origin", "type": "string" },
+        { "name": "destination", "type": "string" },
+        { "name": "assignedCorridor", "type": "string" },
+        { "name": "location", "type": "map" },
+        { "name": "driverName", "type": "string" },
+        { "name": "contactNumber", "type": "string" }
+      ]
+    },
+    {
+      "name": "bridges",
+      "documentId": "bridgeId",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "name", "type": "string" },
+        { "name": "type", "type": "string" },
+        { "name": "state", "type": "string" },
+        { "name": "corridorCode", "type": "string" },
+        { "name": "strategicImportance", "type": "string" },
+        { "name": "operationalStatus", "type": "string" }
+      ]
+    },
+    {
+      "name": "districts",
+      "documentId": "districtId",
+      "fields": [
+        { "name": "districtName", "type": "string" },
+        { "name": "state", "type": "string" },
+        { "name": "connectivityIndex", "type": "number" },
+        { "name": "isolationRisk", "type": "string" }
+      ]
+    },
+    {
+      "name": "alerts",
+      "documentId": "alertId",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "corridor", "type": "string" },
+        { "name": "state", "type": "string" },
+        { "name": "severity", "type": "string" },
+        { "name": "title", "type": "string" },
+        { "name": "message", "type": "string" },
+        { "name": "timestamp", "type": "string" }
+      ]
+    },
+    {
+      "name": "incidents",
+      "documentId": "incidentId",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "reporterName", "type": "string" },
+        { "name": "department", "type": "string" },
+        { "name": "incidentType", "type": "string" },
+        { "name": "district", "type": "string" },
+        { "name": "state", "type": "string" },
+        { "name": "corridorName", "type": "string" },
+        { "name": "timestamp", "type": "string" },
+        { "name": "description", "type": "string" }
+      ]
+    }
+  ]
+}
