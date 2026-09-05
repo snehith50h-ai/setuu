@@ -292,7 +292,7 @@ export const DisruptionPredictor: React.FC<DisruptionPredictorProps> = ({
                 <button
                   id="disruption-goto-alternate-route-btn"
                   onClick={() => onNavigateToAlternateRoutes(current)}
-                  className="px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-slate-900 font-medium text-xs flex items-center gap-2 transition-all shadow-md shadow-sm"
+                  className="px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center gap-2 transition-all shadow-md shadow-sm"
                 >
                   <span>Compute Contingency Alternate Routes for this Corridor</span>
                   <ArrowRight className="w-4 h-4" />
@@ -302,7 +302,7 @@ export const DisruptionPredictor: React.FC<DisruptionPredictorProps> = ({
           ) : (
             /* Blank state prompting to run prediction */
             <div className="bg-white p-10 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-purple-50/60 border border-purple-800/50 flex items-center justify-center text-purple-600">
+              <div className="w-16 h-16 rounded-full bg-purple-50/60 border border-purple-100 flex items-center justify-center text-purple-600">
                 <ShieldAlert className="w-8 h-8" />
               </div>
               <div className="max-w-md space-y-1">
@@ -314,7 +314,7 @@ export const DisruptionPredictor: React.FC<DisruptionPredictorProps> = ({
               <button
                 onClick={handleRunPrediction}
                 disabled={loading}
-                className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-slate-900 font-medium text-xs flex items-center gap-2"
+                className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-medium text-xs flex items-center gap-2 transition-colors disabled:opacity-70"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>Simulate Analysis for {current.code}</span>
