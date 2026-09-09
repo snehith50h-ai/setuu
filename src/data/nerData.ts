@@ -146,9 +146,16 @@ export const INITIAL_CORRIDORS: HighwayCorridor[] = [
       { lat: 26.1124, lng: 91.8142 }, // Khanapara
       { lat: 25.9012, lng: 91.8745 }, // Nongpoh
       { lat: 25.5788, lng: 91.8933 }, // Shillong
+      { lat: 25.5124, lng: 92.0512 }, // Mawryngkneng
       { lat: 25.4412, lng: 92.2045 }, // Jowai
       { lat: 25.2145, lng: 92.4812 }, // Khliehriat
-      { lat: 25.0412, lng: 92.5123 }, // Ratacherra
+      { lat: 25.1764, lng: 92.3789 }, // Lumshnong
+      { lat: 25.1123, lng: 92.3614 }, // Sonapur Tunnel
+      { lat: 25.0682, lng: 92.3856 }, // Umkiang
+      { lat: 25.0215, lng: 92.4312 }, // Malidor
+      { lat: 24.9812, lng: 92.5123 }, // Ratacherra
+      { lat: 24.9012, lng: 92.5934 }, // Badarpur
+      { lat: 24.8333, lng: 92.7789 }, // Silchar
     ],
     environmentalMetrics: {
       rainfall24h: 52,

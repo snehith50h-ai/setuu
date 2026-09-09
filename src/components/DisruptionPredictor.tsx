@@ -41,6 +41,51 @@ export const DisruptionPredictor: React.FC<DisruptionPredictorProps> = ({
   
   const [loading, setLoading] = useState(false);
   const [prediction, setPrediction] = useState<DisruptionPredictionResult | null>(null);
+  const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
+
+  // Peak disruption probability
+  const peakProbability = prediction?.disruptionProbability ?? (
+    current?.environmentalMetrics?.hazardIndex 
+      ? Math.min(94, Math.max(70, current.environmentalMetrics.hazardIndex + 8))
+      : 88
+  );
+
+  // 72-Hour Horizon timeline milestones
+  const horizonPoints = [
+    { label: "-24h", fullLabel: "24 Hours Ago", x: 75, multiplier: 0.16, rainfallDesc: "Antecedent saturation" },
+    { label: "-12h", fullLabel: "12 Hours Ago", x: 165, multiplier: 0.35, rainfallDesc: "Precipitation intensifying" },
+    { label: "Now", fullLabel: "Current Peak Storm", x: 265, multiplier: 1.0, rainfallDesc: "Peak pore-pressure hazard" },
+    { label: "+12h", fullLabel: "+12 Hours Ahead", x: 365, multiplier: 0.94, rainfallDesc: "Severe residual slope stress" },
+    { label: "+24h", fullLabel: "+24 Hours Ahead", x: 465, multiplier: 0.78, rainfallDesc: "Gradual stabilization" },
+    { label: "+48h", fullLabel: "+48 Hours Ahead", x: 555, multiplier: 0.48, rainfallDesc: "Receding flood line" },
+    { label: "+72h", fullLabel: "+72 Hours Ahead", x: 645, multiplier: 0.28, rainfallDesc: "Normal corridor flow" },
+  ].map((pt) => {
+    const prob = Math.min(98, Math.max(5, Math.round(peakProbability * pt.multiplier)));
+    const y = 195 - (prob / 100) * (195 - 25);
+    return { ...pt, prob, y };
+  });
+
+  // Generate smooth cubic bezier path for curve and area
+  const getCubicPath = () => {
+    let d = `M ${horizonPoints[0].x} ${horizonPoints[0].y}`;
+    for (let i = 0; i < horizonPoints.length - 1; i++) {
+      const p0 = horizonPoints[i === 0 ? 0 : i - 1];
+      const p1 = horizonPoints[i];
+      const p2 = horizonPoints[i + 1];
+      const p3 = horizonPoints[i + 2] || p2;
+
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+      d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+    }
+    return d;
+  };
+
+  const curveLinePath = getCubicPath();
+  const curveAreaPath = `${curveLinePath} L ${horizonPoints[horizonPoints.length - 1].x} 195 L ${horizonPoints[0].x} 195 Z`;
 
   const handleCorridorChange = (corridorId: string) => {
     const c = corridors.find((item) => item.id === corridorId);
@@ -321,6 +366,202 @@ export const DisruptionPredictor: React.FC<DisruptionPredictorProps> = ({
               </button>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Disruption Probability Forecast (72-Hour Horizon) & Contingency Rerouting */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-1">
+        {/* Disruption Probability Forecast (72-Hour Horizon) */}
+        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+            <div>
+              <h3 className="font-bold text-slate-800 text-sm tracking-tight">
+                Disruption Probability Forecast (72-Hour Horizon)
+              </h3>
+              <p className="text-xs text-slate-500 font-normal mt-0.5">
+                Precipitation-duration threshold modeling &amp; slope stability projection
+              </p>
+            </div>
+            <span className="text-xs font-mono text-slate-400 font-medium">
+              P(Failure) Threshold: 0.50
+            </span>
+          </div>
+
+          <div className="relative w-full overflow-hidden">
+            <svg
+              viewBox="0 0 700 240"
+              className="w-full h-auto select-none overflow-visible"
+            >
+              <defs>
+                <linearGradient id="disruptionCurveGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ef4444" stopOpacity="0.45" />
+                  <stop offset="60%" stopColor="#f87171" stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+                </linearGradient>
+              </defs>
+
+              {/* Horizontal Grid lines & Y-axis labels */}
+              {[
+                { label: "100% -", y: 25 },
+                { label: "75% -", y: 67.5 },
+                { label: "50% -", y: 110 },
+                { label: "25% -", y: 152.5 },
+                { label: "0% -", y: 195 },
+              ].map((grid, idx) => (
+                <g key={idx}>
+                  <line
+                    x1="65"
+                    y1={grid.y}
+                    x2="655"
+                    y2={grid.y}
+                    stroke="#f1f5f9"
+                    strokeWidth="1"
+                  />
+                  <text
+                    x="60"
+                    y={grid.y + 4}
+                    textAnchor="end"
+                    fill="#94a3b8"
+                    fontSize="11"
+                    fontFamily="monospace"
+                  >
+                    {grid.label}
+                  </text>
+                </g>
+              ))}
+
+              {/* Warning Threshold Line (50%) */}
+              <line
+                x1="65"
+                y1="110"
+                x2="655"
+                y2="110"
+                stroke="#fb923c"
+                strokeWidth="1.2"
+                strokeDasharray="5 4"
+              />
+              <text
+                x="650"
+                y="105"
+                textAnchor="end"
+                fill="#ea580c"
+                fontSize="10"
+                fontWeight="500"
+              >
+                Warning Threshold (50%)
+              </text>
+
+              {/* Area fill */}
+              <path d={curveAreaPath} fill="url(#disruptionCurveGrad)" />
+
+              {/* Main curve line */}
+              <path
+                d={curveLinePath}
+                fill="none"
+                stroke="#ef4444"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              {/* X-Axis timeline labels & interactive hover targets */}
+              {horizonPoints.map((pt, idx) => {
+                const isHovered = hoveredPoint === idx;
+                return (
+                  <g
+                    key={idx}
+                    className="cursor-pointer"
+                    onMouseEnter={() => setHoveredPoint(idx)}
+                    onMouseLeave={() => setHoveredPoint(null)}
+                  >
+                    {/* Invisible hover target column */}
+                    <rect
+                      x={pt.x - 30}
+                      y={20}
+                      width="60"
+                      height="185"
+                      fill="transparent"
+                    />
+
+                    {/* Timeline tick label */}
+                    <text
+                      x={pt.x}
+                      y="218"
+                      textAnchor="middle"
+                      fill={isHovered ? "#0f172a" : pt.label === "Now" ? "#334155" : "#94a3b8"}
+                      fontWeight={pt.label === "Now" || isHovered ? "bold" : "normal"}
+                      fontSize="11"
+                    >
+                      {pt.label}
+                    </text>
+
+                    {/* Circle marker on curve */}
+                    <circle
+                      cx={pt.x}
+                      cy={pt.y}
+                      r={isHovered ? 6 : pt.label === "Now" ? 4.5 : 3.5}
+                      fill="#ef4444"
+                      stroke="#ffffff"
+                      strokeWidth={isHovered ? 2.5 : 2}
+                      className="transition-all duration-150"
+                    />
+
+                    {/* Active hover vertical guideline */}
+                    {isHovered && (
+                      <line
+                        x1={pt.x}
+                        y1={pt.y}
+                        x2={pt.x}
+                        y2={195}
+                        stroke="#ef4444"
+                        strokeWidth="1"
+                        strokeDasharray="2 2"
+                      />
+                    )}
+                  </g>
+                );
+              })}
+            </svg>
+
+            {/* Hover Tooltip Overlay */}
+            {hoveredPoint !== null && (
+              <div
+                className="absolute pointer-events-none bg-slate-900 text-white text-xs px-3 py-1.5 rounded-lg shadow-xl border border-slate-700 transition-all transform -translate-x-1/2 -translate-y-full"
+                style={{
+                  left: `${(horizonPoints[hoveredPoint].x / 700) * 100}%`,
+                  top: `${(horizonPoints[hoveredPoint].y / 240) * 100}%`,
+                  marginTop: "-12px",
+                }}
+              >
+                <div className="font-semibold text-slate-200">
+                  {horizonPoints[hoveredPoint].fullLabel}
+                </div>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-rose-400 font-bold">
+                    {horizonPoints[hoveredPoint].prob}% Probability
+                  </span>
+                  <span className="text-slate-400 text-[10px]">
+                    ({horizonPoints[hoveredPoint].rainfallDesc})
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Contingency Rerouting Callout Banner */}
+        <div className="bg-blue-600 rounded-2xl p-6 text-white flex flex-col justify-between shadow-sm">
+          <p className="text-sm text-blue-50 leading-relaxed font-normal">
+            If <span className="font-semibold text-white">{current.code}</span> is compromised by monsoon failures, trigger the contingency rerouting engine to evaluate bypasses, riverine ferries, and Bailey bridge corridors.
+          </p>
+          <button
+            id="calculate-alternate-routes-btn"
+            onClick={() => onNavigateToAlternateRoutes(current)}
+            className="mt-6 w-full py-3 px-4 bg-white hover:bg-blue-50 text-blue-600 font-semibold text-sm rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all group"
+          >
+            <span>Calculate Alternate Routes</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </button>
         </div>
       </div>
     </div>

@@ -130,7 +130,7 @@ export const FieldIncidentUploader: React.FC<FieldIncidentUploaderProps> = ({
       } catch (err: any) {
         console.error("AI analysis error:", err);
         alert(err.message || "An unexpected error occurred during AI analysis.");
-        setUploading(false);
+        setIsSubmitting(false);
         return;
       }
     } else {
