@@ -9,7 +9,10 @@ import {
   DistrictConnectivity, 
   SystemAlert, 
   SupportedLanguage,
-  Warehouse
+  Warehouse,
+  UserRole,
+  CorridorStatus,
+  AuditLogEntry
 } from "./types";
 import { Header } from "./components/Header";
 import { GISMap } from "./components/GISMap";
@@ -74,6 +77,82 @@ export default function App() {
   const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>("English");
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // RBAC Role & Disaster Simulation Mode
+  const [currentRole, setCurrentRole] = useState<UserRole>("MDONER_ADMIN");
+  const [simulationMode, setSimulationMode] = useState<"LIVE" | "CLOUDBURST">("LIVE");
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([
+    {
+      id: "audit-init-1",
+      timestamp: new Date(Date.now() - 3600000).toISOString(),
+      officerName: "Col. S. Sengupta",
+      officerRole: "MDONER_ADMIN",
+      corridorCode: "NH-10",
+      previousStatus: "HIGH_RISK",
+      newStatus: "BLOCKED",
+      verificationMethod: "DRONE_AERIAL_SURVEY",
+      reason: "Orthomosaic imagery confirmed 120m carriageway breach at 29th Mile.",
+      immutableHash: "sha256-8f3e21a0d9b4c771fae923e"
+    },
+    {
+      id: "audit-init-2",
+      timestamp: new Date(Date.now() - 7200000).toISOString(),
+      officerName: "Er. Lalthanmawia",
+      officerRole: "FIELD_OFFICER",
+      corridorCode: "NH-27",
+      previousStatus: "OPEN",
+      newStatus: "RESTRICTED",
+      verificationMethod: "AI_AIS140_CLUSTER_CONFIRMATION",
+      reason: "AIS-140 telematics corroborated 3-truck cluster deceleration (<5 km/h) at Jatinga Ridge.",
+      immutableHash: "sha256-4c7b89e3a1f290d81cb445f"
+    }
+  ]);
+
+  const handleToggleSimulationMode = () => {
+    setSimulationMode((prev) => {
+      const next = prev === "LIVE" ? "CLOUDBURST" : "LIVE";
+      if (next === "CLOUDBURST") {
+        setCorridors((curr) =>
+          curr.map((c) => (c.code === "NH-10" || c.code === "NH-27" ? { ...c, status: "BLOCKED" } : c))
+        );
+      }
+      return next;
+    });
+  };
+
+  const handleOverrideCorridorStatus = async (
+    corridorCode: string,
+    newStatus: CorridorStatus,
+    reason: string,
+    method: any,
+    officerName: string
+  ) => {
+    setCorridors((prev) => prev.map((c) => (c.code === corridorCode ? { ...c, status: newStatus } : c)));
+    const fakeHash = "sha256-" + Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10);
+    const newLog: AuditLogEntry = {
+      id: `audit-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      officerName,
+      officerRole: currentRole,
+      corridorCode,
+      previousStatus: corridors.find((c) => c.code === corridorCode)?.status || "OPEN",
+      newStatus,
+      verificationMethod: method,
+      reason,
+      immutableHash: fakeHash,
+    };
+    setAuditLogs((prev) => [newLog, ...prev]);
+
+    const targetCorridor = corridors.find((c) => c.code === corridorCode);
+    if (targetCorridor && targetCorridor.id) {
+      try {
+        const corridorRef = doc(db, "corridors", targetCorridor.id);
+        await updateDoc(corridorRef, { status: newStatus });
+      } catch (e) {
+        console.warn("Firestore sync error:", e);
+      }
+    }
+  };
 
   // Live GPS Telemetry Simulation
   const [isSimulatingTelemetry, setIsSimulatingTelemetry] = useState(true);
@@ -233,6 +312,10 @@ export default function App() {
         onLanguageChange={setCurrentLanguage}
         alertsCount={alerts.length}
         onOpenAlertsModal={() => setIsAlertModalOpen(true)}
+        currentRole={currentRole}
+        onRoleChange={setCurrentRole}
+        simulationMode={simulationMode}
+        onToggleSimulationMode={handleToggleSimulationMode}
       />
 
       {/* Primary Navigation Bar */}
@@ -360,6 +443,10 @@ export default function App() {
             districtData={districtData}
             corridors={corridors}
             vehicles={vehicles}
+            currentRole={currentRole}
+            simulationMode={simulationMode}
+            auditLogs={auditLogs}
+            onOverrideCorridorStatus={handleOverrideCorridorStatus}
             onSelectDistrictCorridor={(corridorName) => {
               const c = corridors.find((item) => item.name === corridorName);
               if (c) {

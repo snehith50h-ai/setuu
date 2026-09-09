@@ -20,7 +20,11 @@ import {
   MapPin, 
   RefreshCw,
   SlidersHorizontal,
-  Plus
+  Plus,
+  AlertOctagon,
+  Cpu,
+  Eye,
+  CheckCircle2
 } from "lucide-react";
 import { AddVehicleModal } from "./AddVehicleModal";
 
@@ -134,6 +138,73 @@ export const VehicleTrackingPanel: React.FC<VehicleTrackingPanelProps> = ({
             <Plus className="w-4 h-4" />
             <span>Add Vehicle</span>
           </button>
+        </div>
+      </div>
+
+      {/* Model D: Collective Fleet AIS-140 Anomaly Corroboration Engine */}
+      <div className="bg-amber-50/70 border border-amber-300 rounded-xl p-4 shadow-sm space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 pb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 rounded-lg bg-amber-500 text-white animate-pulse">
+              <Cpu className="w-4 h-4" />
+            </span>
+            <div>
+              <h3 className="text-sm font-bold text-amber-950 flex items-center gap-2">
+                <span>Model D: AIS-140 GPS Fleet Anomaly Corroboration</span>
+                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300">
+                  ⚠️ Suspected Sudden Road Slip
+                </span>
+              </h3>
+              <p className="text-[11px] text-amber-800">
+                Automated multi-vehicle spatial clustering detecting sudden convoy stoppages and U-turn clusters.
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <span className="text-[10px] text-slate-500 uppercase font-bold">Anomaly Confidence</span>
+            <p className="text-base font-extrabold text-amber-900">96.4% Probability</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+          <div className="bg-white/80 p-2.5 rounded-lg border border-amber-200">
+            <span className="text-slate-500 block text-[10px] uppercase font-semibold">Corridor Location</span>
+            <span className="font-bold text-slate-800">NH-27 East-West (KM 112 • Jatinga Ridge)</span>
+          </div>
+          <div className="bg-white/80 p-2.5 rounded-lg border border-amber-200">
+            <span className="text-slate-500 block text-[10px] uppercase font-semibold">Affected AIS-140 Signals</span>
+            <span className="font-bold text-rose-700">3 Trucks Synchronously Halted (&lt;500m)</span>
+          </div>
+          <div className="bg-white/80 p-2.5 rounded-lg border border-amber-200">
+            <span className="text-slate-500 block text-[10px] uppercase font-semibold">Telemetry Anomaly</span>
+            <span className="font-bold text-amber-800">-44 km/h Speed Drop + Reverse Vector</span>
+          </div>
+          <div className="bg-white/80 p-2.5 rounded-lg border border-amber-200">
+            <span className="text-slate-500 block text-[10px] uppercase font-semibold">Cluster Vehicles</span>
+            <span className="font-mono font-bold text-slate-700">AS-01-GC-4412, MZ-01-A-7781</span>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs">
+          <p className="text-[11px] text-amber-900 leading-normal">
+            <strong>System Recommendation:</strong> Model D corroborates unconfirmed carriageway subsidence. Pre-emptively downgrade corridor to <em>RESTRICTED</em> and alert downstream convoys.
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => alert("Reconnaissance Drone Mission dispatched to NH-27 KM 112 (Jatinga Ridge)! Live video stream initializing.")}
+              className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 font-semibold text-xs flex items-center gap-1.5 shadow-xs"
+            >
+              <Eye className="w-3.5 h-3.5 text-blue-600" />
+              <span>Launch Recon Drone</span>
+            </button>
+            <button
+              onClick={() => alert("Corridor NH-27 flagged as RESTRICTED based on Model D fleet clustering. Automatic diversion alerts pushed to 6 GPS convoys.")}
+              className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Confirm &amp; Issue Reroute Directive</span>
+            </button>
+          </div>
         </div>
       </div>
 

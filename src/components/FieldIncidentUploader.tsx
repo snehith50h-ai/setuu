@@ -16,7 +16,12 @@ import {
   Wrench, 
   FileText,
   WifiOff,
-  UserCheck
+  UserCheck,
+  Mic,
+  Radio,
+  Send,
+  X,
+  MessageSquare
 } from "lucide-react";
 
 interface FieldIncidentUploaderProps {
@@ -48,6 +53,78 @@ export const FieldIncidentUploader: React.FC<FieldIncidentUploaderProps> = ({
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastSubmittedResult, setLastSubmittedResult] = useState<FieldIncidentReport | null>(null);
+
+  // Bhashini Speech-to-Text & Dual-SMS Simulation State
+  const [isBhashiniListening, setIsBhashiniListening] = useState(false);
+  const [bhashiniLang, setBhashiniLang] = useState<string>("Assamese");
+  const [bhashiniVoiceText, setBhashiniVoiceText] = useState<string | null>(null);
+  const [showSmsModal, setShowSmsModal] = useState(false);
+  const [smsTransmissionStep, setSmsTransmissionStep] = useState<"IDLE" | "COMPRESSING" | "TRANSMITTING" | "CONFIRMED">("IDLE");
+  const [smsLatencyMs, setSmsLatencyMs] = useState(1320);
+
+  // Bhashini Multi-Lingual Regional Voice Input Handler
+  const handleBhashiniVoiceDictation = () => {
+    setIsBhashiniListening(true);
+    setTimeout(() => {
+      setIsBhashiniListening(false);
+      setBhashiniVoiceText("আজি পুৱা ১০ নম্বৰ ৰাষ্ট্ৰীয় ঘাইপথৰ ২৯ মাইলৰ ওচৰত পাহাৰ খহি পৰিছে। নদীৰ সোঁতত কালভাৰ্ট উটি গৈছে। (Assamese Audio Ingested)");
+      setDescription("Bhashini ASR Transcribed [Assamese]: Massive 90m mudslide and boulder fall choked carriage surface near 29th Mile on NH-10. Hillside stream culvert completely washed away under torrential flow. Immediate heavy earthmoving machinery required.");
+      setIncidentType("Landslide");
+      setState("Sikkim");
+      setDistrict("East Sikkim / Pakyong");
+      setCorridorName("NH-10 Siliguri - Sevoke - Teesta - Gangtok Lifeline");
+    }, 1600);
+  };
+
+  // Dual-SMS Fallback Transmission Trigger (<2s guaranteed dispatch)
+  const handleTriggerDualSms = () => {
+    setShowSmsModal(true);
+    setSmsTransmissionStep("COMPRESSING");
+    setTimeout(() => {
+      setSmsTransmissionStep("TRANSMITTING");
+      setTimeout(() => {
+        setSmsTransmissionStep("CONFIRMED");
+        setSmsLatencyMs(Math.floor(1250 + Math.random() * 250)); // 1.25s - 1.50s (sub-2s)
+
+        // Queue report
+        const fallbackReport: FieldIncidentReport = {
+          id: `sms-inc-${Date.now()}`,
+          reporterName,
+          officialDesignation,
+          department,
+          contact,
+          incidentType,
+          district,
+          state,
+          corridorName,
+          coordinates: { lat: latitude, lng: longitude },
+          timestamp: new Date().toISOString(),
+          description: `[DUAL-SMS CELL BROADCAST] ${description}`,
+          photoUrl: imagePreview || undefined,
+          status: "VERIFIED_ACTIVE",
+          syncStatus: "OFFLINE_PENDING",
+          aiAssessment: {
+            severity: "CRITICAL",
+            category: incidentType,
+            damageSummary: "Compressed SMS packet decoded: Major carriageway breach with severe slope destabilization.",
+            debrisVolumeEstimate: "Estimated ~1,100 m³ debris",
+            passability: {
+              twoWheelers: "Passable with extreme caution",
+              lightMotorVehicles: "Impassable",
+              heavyFreight: "Blocked",
+              emergencyAmbulance: "Priority clearance channel required",
+            },
+            estimatedClearanceHours: 12,
+            machineryRequired: ["2x Heavy Dozers", "1x Hydraulic Excavator"],
+            supplyChainRiskRating: "CRITICAL",
+            actionPlan: "Acknowledge dual-SMS alert. Broadcast diversion advisory to approaching freight convoys.",
+          },
+        };
+        onAddIncidentReport(fallbackReport);
+        setLastSubmittedResult(fallbackReport);
+      }, 700);
+    }, 600);
+  };
 
   // Auto-detect GPS coordinates
   const handleDetectGPS = () => {
@@ -416,46 +493,92 @@ export const FieldIncidentUploader: React.FC<FieldIncidentUploaderProps> = ({
               </div>
             </div>
 
-            {/* Field Description */}
-            <div>
-              <label className="block text-slate-500 font-medium mb-1">
-                Detailed Field Situation Description & Observations:
-              </label>
+            {/* Field Description & Bhashini Multi-Lingual Voice Dictation */}
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <label className="block text-slate-700 font-medium">
+                  Detailed Field Situation Description & Observations:
+                </label>
+                
+                {/* Bhashini Voice Input */}
+                <div className="flex items-center gap-2">
+                  <select
+                    value={bhashiniLang}
+                    onChange={(e) => setBhashiniLang(e.target.value)}
+                    className="bg-slate-100 border border-slate-300 rounded px-2 py-1 text-[11px] text-slate-700 font-medium outline-none"
+                  >
+                    <option value="Assamese">অসমীয়া (Assamese)</option>
+                    <option value="Bengali">বাংলা (Bengali)</option>
+                    <option value="Manipuri">মৈতৈলোন্ (Manipuri)</option>
+                    <option value="Hindi">हिंदी (Hindi)</option>
+                    <option value="English">English</option>
+                  </select>
+
+                  <button
+                    type="button"
+                    onClick={handleBhashiniVoiceDictation}
+                    disabled={isBhashiniListening}
+                    className={`px-2.5 py-1 rounded text-[11px] font-semibold flex items-center gap-1.5 transition-all ${
+                      isBhashiniListening
+                        ? "bg-rose-500 text-white animate-pulse"
+                        : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200"
+                    }`}
+                  >
+                    <Mic className={`w-3.5 h-3.5 ${isBhashiniListening ? "animate-spin" : ""}`} />
+                    <span>{isBhashiniListening ? "Bhashini Transcribing..." : "Bhashini Voice Input"}</span>
+                  </button>
+                </div>
+              </div>
+
               <textarea
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 required
-                className="w-full bg-slate-50 border border-slate-200 border border-slate-300 rounded-lg p-2.5 text-slate-900 outline-none"
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-900 outline-none focus:border-indigo-500 focus:bg-white transition-colors"
                 placeholder="Describe road blockage extent, whether culvert is broken, trapped vehicles, or hillside stability..."
               />
             </div>
           </div>
 
-          {/* Submit Button */}
-          <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
+          {/* Submit & Dual-SMS Fallback Buttons */}
+          <div className="pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
             <span className="text-slate-500 text-[11px]">
               {isOnline ? "Transmits directly to MDoNER Logistics Command" : "Will be cached locally and synced upon connectivity"}
             </span>
 
-            <button
-              type="submit"
-              id="submit-incident-report-btn"
-              disabled={isSubmitting}
-              className="px-5 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-slate-900 font-semibold text-xs flex items-center gap-2 transition-all shadow-lg shadow-rose-600/20 disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <>
-                  <Sparkles className="w-4 h-4 animate-spin" />
-                  <span>Processing Multimodal AI Assessment...</span>
-                </>
-              ) : (
-                <>
-                  <UploadCloud className="w-4 h-4" />
-                  <span>Transmit Field Incident Report</span>
-                </>
-              )}
-            </button>
+            <div className="flex items-center gap-2.5">
+              {/* Dual-SMS Fallback Button */}
+              <button
+                type="button"
+                onClick={handleTriggerDualSms}
+                disabled={isSubmitting}
+                className="px-3.5 py-2.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-semibold text-xs flex items-center gap-1.5 transition-all"
+                title="Trigger sub-2s compressed dual-channel SMS for remote zero-internet zones"
+              >
+                <Radio className="w-4 h-4 text-amber-600 animate-pulse" />
+                <span>Dual-SMS Fallback (&lt;2s)</span>
+              </button>
+
+              <button
+                type="submit"
+                id="submit-incident-report-btn"
+                disabled={isSubmitting}
+                className="px-5 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs flex items-center gap-2 transition-all shadow-lg shadow-rose-600/20 disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Sparkles className="w-4 h-4 animate-spin" />
+                    <span>Processing Multimodal AI Assessment...</span>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="w-4 h-4" />
+                    <span>Transmit Field Incident Report</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </form>
 
@@ -536,6 +659,84 @@ export const FieldIncidentUploader: React.FC<FieldIncidentUploaderProps> = ({
           )}
         </div>
       </div>
+
+      {/* Dual-SMS Packet Simulation Modal */}
+      {showSmsModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 text-slate-100 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2 text-amber-400">
+                <Radio className="w-5 h-5 animate-pulse" />
+                <h3 className="font-bold text-sm tracking-wide">Dual-Channel SMS Binary Transmission</h3>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-700 text-[10px] font-mono font-semibold">
+                SUB-2s LATENCY VERIFIED
+              </span>
+            </div>
+
+            {/* Latency & Packet Header */}
+            <div className="grid grid-cols-2 gap-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-xs">
+              <div>
+                <span className="text-slate-400 text-[10px] block">Transmission Time:</span>
+                <span className="text-xl font-bold font-mono text-emerald-400">1.32s</span>
+                <span className="text-slate-500 text-[10px] ml-1">(&lt; 2.0s target)</span>
+              </div>
+              <div>
+                <span className="text-slate-400 text-[10px] block">Compressed Payload:</span>
+                <span className="text-xl font-bold font-mono text-amber-400">140 Bytes</span>
+                <span className="text-slate-500 text-[10px] ml-1">GSM 7-bit</span>
+              </div>
+            </div>
+
+            {/* Binary Hex Dump */}
+            <div>
+              <span className="text-slate-400 text-[11px] font-medium block mb-1">Encoded 140-Byte Binary Packet:</span>
+              <div className="bg-black/80 font-mono text-[10px] text-emerald-500 p-2.5 rounded-lg border border-slate-800 break-all leading-relaxed">
+                4E45525F4C4F474953544943533A3A{incidentType.toUpperCase().slice(0, 4)}::LAT={latitude.toFixed(4)}::LON={longitude.toFixed(4)}::DEPT={department}::SHA256=9f8e21a0d7::CRITICAL_DISRUPTION_CONFIRMED
+              </div>
+            </div>
+
+            {/* Dual Channel Progression */}
+            <div className="space-y-2 text-xs">
+              <span className="text-slate-400 text-[11px] font-medium block">Dual Transmission Pipelines:</span>
+              <div className="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/60 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                  <div>
+                    <div className="font-semibold text-slate-200">Channel 1: BSNL Cell Broadcast</div>
+                    <div className="text-[10px] text-slate-400">900 MHz GSM · Emergency Priority Channel 4370</div>
+                  </div>
+                </div>
+                <span className="font-mono text-emerald-400 text-xs font-semibold">ACK 0.78s</span>
+              </div>
+
+              <div className="p-2.5 rounded-lg bg-slate-800/60 border border-slate-700/60 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                  <div>
+                    <div className="font-semibold text-slate-200">Channel 2: GSAT-7A Satellite Gateway</div>
+                    <div className="text-[10px] text-slate-400">1.5 GHz L-Band · MDoNER Ground Station Shillong</div>
+                  </div>
+                </div>
+                <span className="font-mono text-emerald-400 text-xs font-semibold">ACK 1.32s</span>
+              </div>
+            </div>
+
+            {/* Drift Local DB note */}
+            <div className="bg-blue-950/40 border border-blue-800/60 p-3 rounded-xl text-[11px] text-blue-200">
+              <strong className="text-blue-100">Offline Resilience Note:</strong> Incident has been stored in local Flutter Drift DB (SQLCipher encrypted). Telematics broadcast is active for all approaching convoys on {corridorName}.
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowSmsModal(false)}
+              className="w-full py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold border border-slate-700 transition-colors"
+            >
+              Dismiss Simulation & Return to Dashboard
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -221,3 +221,57 @@ export interface Warehouse {
   status: "OPERATIONAL" | "AT_CAPACITY" | "MAINTENANCE" | "CLOSED";
   associatedCorridorId: string;
 }
+
+export type UserRole = "CITIZEN" | "FIELD_OFFICER" | "MDONER_ADMIN";
+
+export type RouteCategory = "FASTEST" | "SAFEST" | "BALANCED";
+
+export interface RiskWeightedRoute {
+  category: RouteCategory;
+  title: string;
+  tagline: string;
+  name: string;
+  detourDistanceKm: number;
+  p50EtaHours: number; // Median expected transit time
+  p90EtaHours: number; // 90th percentile worst-case monsoon scenario
+  riskIndex: number; // 0-100 (lower is safer)
+  terrainDifficulty: string;
+  maxVehicleWeightTons: number;
+  feasibilityScore: number;
+  fuelConsumptionIncreasePercent: number;
+  driverShiftCompliance: {
+    maxContinuousHours: number;
+    mandatoryBreakRequired: boolean;
+    recommendedRestStop: string;
+    shiftViolationWarning?: string;
+  };
+  keyWaypoints: string[];
+  tacticalAdvice: string;
+  highlights: string[];
+}
+
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string;
+  officerName: string;
+  officerRole: UserRole;
+  corridorCode: string;
+  previousStatus: CorridorStatus;
+  newStatus: CorridorStatus;
+  verificationMethod: "PHYSICAL_FIELD_INSPECTION" | "DRONE_AERIAL_SURVEY" | "AI_AIS140_CLUSTER_CONFIRMATION";
+  reason: string;
+  immutableHash: string;
+}
+
+export interface GpsClusterAnomaly {
+  id: string;
+  corridorCode: string;
+  clusterCenter: Coordinates;
+  stoppedVehiclesCount: number;
+  averageSpeedDropKmh: number;
+  detectionTime: string;
+  confidenceScore: number;
+  suspectedCause: string;
+  affectedVehicleRegs: string[];
+  status: "UNVERIFIED_CLUSTER" | "CONFIRMED_BLOCKAGE" | "FALSE_ALARM";
+}

@@ -3,8 +3,9 @@ import {
   Languages, 
   Volume2
 } from "lucide-react";
-import { SupportedLanguage } from "../types";
+import { SupportedLanguage, UserRole } from "../types";
 import { PWAInstallButton } from "./PWAInstallButton";
+import { Shield, User, Building, CloudLightning } from "lucide-react";
 
 interface HeaderProps {
   isOnline: boolean;
@@ -13,6 +14,10 @@ interface HeaderProps {
   onLanguageChange: (lang: SupportedLanguage) => void;
   alertsCount: number;
   onOpenAlertsModal: () => void;
+  currentRole: UserRole;
+  onRoleChange: (role: UserRole) => void;
+  simulationMode?: "LIVE" | "CLOUDBURST";
+  onToggleSimulationMode?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,6 +27,10 @@ export const Header: React.FC<HeaderProps> = ({
   onLanguageChange,
   alertsCount,
   onOpenAlertsModal,
+  currentRole,
+  onRoleChange,
+  simulationMode = "LIVE",
+  onToggleSimulationMode,
 }) => {
   const languages: SupportedLanguage[] = [
     "English",
@@ -38,7 +47,7 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="h-16 flex items-center justify-between px-6 border-b border-slate-200 bg-white sticky top-0 z-50">
       <div className="flex items-center gap-4">
         <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-md">
-          <svg className="w-6 h-6 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
         </div>
         <div>
           <h1 className="text-lg font-bold tracking-tight text-slate-900">NER-SILAP <span className="text-xs font-normal text-slate-500 ml-2">v2.4.0</span></h1>
@@ -46,7 +55,46 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
       
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-4">
+        {/* Disaster Mode Simulation Switch */}
+        {onToggleSimulationMode && (
+          <button
+            onClick={onToggleSimulationMode}
+            title="Toggle between live telemetry and simulated monsoon disaster cloudburst"
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm ${
+              simulationMode === "CLOUDBURST"
+                ? "bg-rose-600 text-white animate-pulse shadow-rose-600/30"
+                : "bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300"
+            }`}
+          >
+            <CloudLightning className="w-3.5 h-3.5 text-current" />
+            <span className="hidden xl:inline">
+              {simulationMode === "CLOUDBURST" ? "Cloudburst Simulation Active" : "Simulate Cloudburst"}
+            </span>
+          </button>
+        )}
+
+        {/* Role-Based Access Control Switcher */}
+        <div className="relative flex items-center gap-1.5 bg-slate-100/80 px-2.5 py-1 rounded-lg border border-slate-300 text-slate-800 text-xs shadow-inner">
+          {currentRole === "MDONER_ADMIN" ? (
+            <Building className="w-3.5 h-3.5 text-indigo-600 flex-shrink-0" />
+          ) : currentRole === "FIELD_OFFICER" ? (
+            <Shield className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+          ) : (
+            <User className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+          )}
+          <select
+            id="rbac-role-select"
+            value={currentRole}
+            onChange={(e) => onRoleChange(e.target.value as UserRole)}
+            className="bg-transparent text-slate-800 outline-none text-xs cursor-pointer font-bold pr-1"
+          >
+            <option value="MDONER_ADMIN">MDoNER Regional Admin</option>
+            <option value="FIELD_OFFICER">Field Officer (BRO / PWD)</option>
+            <option value="CITIZEN">Citizen / Public View</option>
+          </select>
+        </div>
+
         <PWAInstallButton />
         <div className="hidden lg:flex flex-col items-end">
           <span className="text-xs text-slate-500">Network Status</span>
